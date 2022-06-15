@@ -1,19 +1,17 @@
 import {track, trigger} from "./effect";
 
-export function reactive(obj){
+export function reactive(obj) {
     return new Proxy(obj,{
-        get(target: any, key: string | symbol): any {
-            const res = Reflect.get(target,key);
-
-            // TODO 依赖收集
+        get(target: any, key: string | symbol, receiver: any): any{
+            // 依赖收集
             track(target,key)
-            return res;
+            return Reflect.get(target,key);
         },
-        set(target: any, key: string | symbol, value: any): boolean {
-            const res = Reflect.set(target,key,value);
-            // TODO 依赖触发
+        set(target: any, key: string | symbol, value: any, receiver: any): boolean {
+            // 触发依赖
+           const res = Reflect.set(target,key,value)
             trigger(target,key)
-            return res;
+            return res
         }
     })
 }

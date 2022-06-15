@@ -1,3 +1,6 @@
+const targetMap = new Map();
+let activeEffect:ReactiveEffect;
+
 class ReactiveEffect{
     private readonly _fn;
 
@@ -6,44 +9,39 @@ class ReactiveEffect{
     }
 
     run(){
-        activeEffect = this;
-        this._fn();
+        activeEffect =  this;
+        return this._fn();
     }
 }
 
-export function effect(fn) {
-    const _effect = new ReactiveEffect(fn);
-
-    _effect.run();
-}
-
-const targetMap = new Map();
-let activeEffect;
-
-// 收集依赖
 export function track(target,key){
     let depsMap = targetMap.get(target);
 
     if (!depsMap) {
-        depsMap = new Map();
+        depsMap = new Map()
         targetMap.set(target,depsMap);
     }
 
-    let dep = depsMap.get(key);
-    if (!dep) {
-        dep = new Set();
-        depsMap.set(key,dep)
+    let deps = depsMap.get(key);
+    if (!deps) {
+        deps = new Set();
+        depsMap.set(key,deps);
     }
 
-    dep.add(activeEffect);
+    deps.add(activeEffect);
 }
 
-
 export function trigger(target,key){
-    const depsMap = targetMap.get(target);
-    const deps = depsMap.get(key);
-
-    for (const effect of deps) {
-        effect.run();
+    const depsMap = targetMap.get(target),
+          deps = depsMap.get(key);
+    for (let dep of deps) {
+        dep.run();
     }
+}
+
+export function effect(fn){
+    const _effect = new ReactiveEffect(fn);
+    _effect.run();
+
+    return _effect.run.bind(_effect);
 }
